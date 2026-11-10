@@ -12,10 +12,11 @@ Personal football training hub: drills, weekly plans, fitness, and progress logs
 - `tracker.html` – check-in and progression tracker (published as a Claude artifact; data lives in the artifact's database)
 
 ## Supabase setup (index.html)
-`index.html` is the same tracker backed by Supabase, to host as a static site (GitHub Pages or Vercel).
+`index.html` is the same tracker backed by Supabase, to host as a static site (GitHub Pages or Vercel). There is no login: you are the only user.
 
 1. Create a project at supabase.com.
-2. SQL Editor: paste and run `supabase/schema.sql`. It creates the tables and locks each row to its owner.
+2. SQL Editor: paste and run `supabase/schema.sql`.
 3. Project Settings -> API: copy the Project URL and the `anon` public key into `config.js`.
-4. Authentication -> URL Configuration: add your hosted site URL as the Site URL and a Redirect URL.
-5. Open the site and sign in with your email. Then, in Authentication -> Sign In / Providers, turn off "Allow new users to sign up" so only you can get in.
+4. Host the site and open it. Your numbers save straight to Supabase.
+
+Anyone who has the site address and the anon key can read and write the tables, so don't share the address. If that ever matters, add Supabase Auth and tighten the policies.

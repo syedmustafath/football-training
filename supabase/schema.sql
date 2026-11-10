@@ -1,41 +1,40 @@
 -- Run this once in the Supabase dashboard: SQL Editor -> New query -> paste -> Run.
--- Every table is locked to the signed-in user with row level security,
--- so the public anon key in config.js can never read or write anyone else's rows.
+-- Single-user setup: no login. The anon key in config.js can read and write these
+-- tables, so keep the site address to yourself.
+--
+-- If you ran an earlier version of this file (with user_id columns), uncomment
+-- the next line first. It deletes those tables and anything logged in them.
+-- drop table if exists public.days, public.lifts, public.checks, public.settings cascade;
 
 create table if not exists public.days (
-  user_id  uuid not null default auth.uid() references auth.users on delete cascade,
-  date     date not null,
+  date     date primary key,
   done     jsonb not null default '{}'::jsonb,
   complete boolean not null default false,
   knee     text not null default '',
   note     text not null default '',
-  run      jsonb,
-  primary key (user_id, date)
+  run      jsonb
 );
 
 create table if not exists public.lifts (
-  id      uuid primary key default gen_random_uuid(),
-  user_id uuid not null default auth.uid() references auth.users on delete cascade,
-  date    date not null,
-  ex      text not null,
-  load    numeric,
-  reps    numeric not null,
-  sets    int not null default 1,
-  note    text not null default '',
-  ts      bigint not null
+  id    uuid primary key default gen_random_uuid(),
+  date  date not null,
+  ex    text not null,
+  load  numeric,
+  reps  numeric not null,
+  sets  int not null default 1,
+  note  text not null default '',
+  ts    bigint not null
 );
-create index if not exists lifts_user_ex_date on public.lifts (user_id, ex, date);
+create index if not exists lifts_ex_date on public.lifts (ex, date);
 
 create table if not exists public.checks (
-  user_id uuid not null default auth.uid() references auth.users on delete cascade,
-  date    date not null,
-  surg    numeric not null,
-  other   numeric not null,
-  primary key (user_id, date)
+  date  date primary key,
+  surg  numeric not null,
+  other numeric not null
 );
 
 create table if not exists public.settings (
-  user_id   uuid primary key default auth.uid() references auth.users on delete cascade,
+  id        int primary key default 1 check (id = 1),
   start     date,
   run_shift int not null default 0
 );
@@ -45,8 +44,8 @@ declare t text;
 begin
   foreach t in array array['days','lifts','checks','settings'] loop
     execute format('alter table public.%I enable row level security', t);
-    execute format('drop policy if exists "own rows" on public.%I', t);
-    execute format('create policy "own rows" on public.%I for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id)', t);
-    execute format('grant select, insert, update, delete on public.%I to authenticated', t);
+    execute format('drop policy if exists "open access" on public.%I', t);
+    execute format('create policy "open access" on public.%I for all to anon, authenticated using (true) with check (true)', t);
+    execute format('grant select, insert, update, delete on public.%I to anon, authenticated', t);
   end loop;
 end $$;
