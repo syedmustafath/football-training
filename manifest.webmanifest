@@ -1,0 +1,16 @@
+{
+  "name": "Comeback Training Log",
+  "short_name": "Comeback",
+  "description": "Daily check-in and lift tracker for the 12-week football comeback routine.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#59c4b8",
+  "theme_color": "#59c4b8",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
