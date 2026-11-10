@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Comeback Training Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+/* Layout: one narrow column like a coach's clipboard. Header with 12-week progress strip, four tabs (Today, Week, Progress, Checks). */
+:root {
+  --bg: #f2f5f0;
+  --surface: #ffffff;
+  --ink: #14221a;
+  --muted: #5a6a60;
+  --line: #dbe2da;
+  --accent: #17794a;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2f1e8;
+  --high: #c2410c;
+  --mod: #9a6a05;
+  --low: #286a8c;
+  --off: #76827b;
+  --bad: #b3261e;
+  --warn: #9a6a05;
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1511;
+    --surface: #15201a;
+    --ink: #e7efe9;
+    --muted: #94a59b;
+    --line: #25352b;
+    --accent: #4cc38a;
+    --accent-ink: #06150d;
+    --accent-soft: #173324;
+    --high: #ff8a5b;
+    --mod: #e3b24c;
+    --low: #72b6d8;
+    --off: #8a958f;
+    --bad: #ff7b72;
+    --warn: #e3b24c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1511;
+  --surface: #15201a;
+  --ink: #e7efe9;
+  --muted: #94a59b;
+  --line: #25352b;
+  --accent: #4cc38a;
+  --accent-ink: #06150d;
+  --accent-soft: #173324;
+  --high: #ff8a5b;
+  --mod: #e3b24c;
+  --low: #72b6d8;
+  --off: #8a958f;
+  --bad: #ff7b72;
+  --warn: #e3b24c;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.45;
+  padding-block: 16px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--font-display); text-transform: uppercase; letter-spacing: .03em; margin: 0; line-height: 1.05; text-wrap: balance; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+
+header.top { display: flex; flex-direction: column; gap: 10px; }
+.top-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.top h1 { font-size: 34px; }
+.weeklabel { font-family: var(--font-display); font-weight: 600; font-size: 18px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.weeklabel b { color: var(--ink); }
+.strip { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; }
+.strip i { height: 8px; border-radius: 2px; background: var(--line); display: block; }
+.strip i.past { background: var(--accent); opacity: .55; }
+.strip i.now { background: var(--accent); }
+
+nav.tabs { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 2px solid var(--line); }
+nav.tabs button {
+  background: none; border: 0; padding: 10px 4px; font-family: var(--font-display); font-weight: 600;
+  font-size: 18px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted);
+  border-bottom: 3px solid transparent; margin-bottom: -2px;
+}
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.card.flat { background: transparent; border-style: dashed; }
+.banner { border-radius: 8px; padding: 12px 14px; border: 1px solid var(--line); background: var(--surface); font-size: 15px; }
+.banner.warn { border-color: var(--warn); }
+.banner.bad { border-color: var(--bad); }
+.banner .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+
+.datenav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.datenav .mid { text-align: center; min-width: 0; }
+.datenav h2 { font-size: 28px; }
+.iconbtn { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; width: 44px; height: 44px; font-size: 20px; line-height: 1; }
+
+.tag { display: inline-block; font-family: var(--font-display); font-weight: 700; font-size: 14px; letter-spacing: .08em; padding: 2px 8px; border-radius: 4px; border: 1.5px solid currentColor; text-transform: uppercase; }
+.tag.HIGH { color: var(--high); } .tag.LOW { color: var(--low); } .tag.MODERATE { color: var(--mod); } .tag.OFF { color: var(--off); }
+.sess-head { display: flex; flex-direction: column; gap: 6px; }
+.sess-head .line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sess-head h2 { font-size: 26px; }
+.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); }
+.sessnote { font-size: 14px; color: var(--muted); }
+
+.items { display: flex; flex-direction: column; margin: 0 -16px; }
+.item { display: grid; grid-template-columns: 32px 1fr; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--line); }
+.item:first-child { border-top: 1px solid var(--line); }
+.chk { width: 32px; height: 32px; border-radius: 6px; border: 2px solid var(--muted); background: transparent; display: grid; place-items: center; padding: 0; color: var(--accent-ink); font-weight: 700; }
+.chk[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); }
+.item .body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.item .t { font-weight: 600; }
+.item.done .t { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
+.item .d { font-size: 14px; color: var(--muted); }
+.flag { font-size: 12px; font-weight: 600; color: var(--bad); letter-spacing: .04em; text-transform: uppercase; }
+.lastline { font-size: 14px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.chip { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-soft); border-radius: 999px; padding: 2px 4px 2px 10px; font-size: 14px; font-weight: 500; }
+.chip button { border: 0; background: none; width: 22px; height: 22px; border-radius: 50%; color: var(--muted); line-height: 1; }
+.nudge { font-size: 14px; color: var(--accent); font-weight: 600; }
+
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 14px; min-height: 40px; font-weight: 600; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.small { min-height: 32px; padding: 4px 10px; font-size: 14px; }
+.btn.ghost { background: transparent; }
+.btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; align-items: end; background: var(--bg); border-radius: 8px; padding: 10px; margin-top: 4px; }
+.form label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; min-width: 0; }
+.form .wide { grid-column: 1 / -1; }
+input, textarea, select {
+  font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  padding: 8px 10px; min-height: 40px; width: 100%; min-width: 0; font-variant-numeric: tabular-nums;
+}
+textarea { resize: vertical; min-height: 64px; }
+
+.knee { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.knee .lbl { font-weight: 600; margin-right: 4px; }
+
+/* week */
+.days7 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.dcell { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 2px; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; position: relative; }
+.dcell .dn { font-family: var(--font-display); font-weight: 600; letter-spacing: .06em; font-size: 15px; text-transform: uppercase; }
+.dcell .dd { font-size: 12px; color: var(--muted); }
+.dcell.today { border-color: var(--accent); border-width: 2px; }
+.dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line); background: transparent; }
+.dot.full { background: var(--accent); border-color: var(--accent); }
+.dot.half { background: linear-gradient(90deg, var(--accent) 50%, transparent 50%); border-color: var(--accent); }
+.dot.rest { border-style: dotted; }
+.kdot { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; }
+.kdot.sore { background: var(--warn); } .kdot.swollen { background: var(--bad); }
+.heat { display: grid; grid-template-columns: 44px repeat(7, 1fr) 52px; gap: 4px; align-items: center; }
+.heat .hh { font-size: 12px; color: var(--muted); text-align: center; font-weight: 600; }
+.heat .wl { font-family: var(--font-display); font-weight: 600; letter-spacing: .05em; font-size: 15px; }
+.heat .wl.now { color: var(--accent); }
+.heat .pct { font-size: 13px; text-align: right; color: var(--muted); }
+.hc { aspect-ratio: 1; max-height: 28px; width: 100%; border-radius: 4px; border: 1px solid var(--line); background: transparent; padding: 0; position: relative; }
+.hc.full { background: var(--accent); border-color: var(--accent); }
+.hc.half { background: var(--accent-soft); border-color: var(--accent); }
+.hc.off { opacity: .35; }
+.hc.future { border-style: dashed; opacity: .5; }
+.hc.sore::after, .hc.swollen::after { content: ""; position: absolute; right: 2px; top: 2px; width: 7px; height: 7px; border-radius: 50%; }
+.hc.sore::after { background: var(--warn); } .hc.swollen::after { background: var(--bad); }
+
+/* progress */
+.excard h3 { font-size: 22px; }
+.exhead { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.stats { display: flex; gap: 20px; flex-wrap: wrap; }
+.stat .v { font-family: var(--font-display); font-weight: 700; font-size: 24px; letter-spacing: .02em; }
+.stat .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.chart { width: 100%; height: auto; display: block; }
+.chart text { fill: var(--muted); font-family: var(--font-body); font-size: 10px; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .ln { stroke: var(--accent); stroke-width: 2; fill: none; }
+.chart .pt { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
+.chart .end { fill: var(--accent); }
+details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
+.hist { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.hist .r { display: flex; align-items: center; gap: 8px; font-size: 14px; min-width: 0; }
+.hist .r span:first-child { width: 64px; color: var(--muted); flex: none; }
+
+.hoprow { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.pill { font-weight: 700; font-family: var(--font-display); letter-spacing: .04em; font-size: 20px; }
+.pill.good { color: var(--accent); } .pill.low { color: var(--warn); }
+.status { font-size: 13px; color: var(--muted); min-height: 18px; }
+.status.err { color: var(--bad); }
+.empty { color: var(--muted); font-size: 15px; }
+.rule { font-size: 14px; color: var(--muted); }
+@media (max-width: 440px) {
+  .top h1 { font-size: 28px; }
+  .heat { grid-template-columns: 34px repeat(7, 1fr) 40px; gap: 3px; }
+}
+@media (prefers-reduced-motion: no-preference) { .bar > i { transition: width .25s ease; } }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="top-row">
+      <h1>Comeback Log</h1>
+      <div class="weeklabel num" id="weeklabel"></div>
+    </div>
+    <div class="strip" id="strip" aria-hidden="true"></div>
+  </header>
+  <div class="status" id="status" role="status" aria-live="polite"></div>
+  <div id="app"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- helpers ---------- */
+  const $app = document.getElementById("app");
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const pad = (n) => String(n).padStart(2, "0");
+  const fmt = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  const parse = (s) => { const p = s.split("-").map(Number); return new Date(p[0], p[1] - 1, p[2], 12); };
+  const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return fmt(d); };
+  const monday = (s) => { const d = parse(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return fmt(d); };
+  const todayStr = () => fmt(new Date());
+  const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const shortDate = (s) => { const d = parse(s); return d.getDate() + " " + MON[d.getMonth()]; };
+  const longDate = (s) => { const d = parse(s); return DOW[d.getDay()] + " " + d.getDate() + " " + MON[d.getMonth()]; };
+  const num = (v) => { const n = parseFloat(v); return isFinite(n) ? n : null; };
+  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+
+  /* ---------- state ---------- */
+  let sb = null;
+  const S = { login: false, user: null, days: {}, lifts: [], checks: {}, start: null, runShift: 0, db: null, ready: false, slow: false, failed: false };
+  const ui = { loginMsg: "", loginErr: false, tab: "today", date: todayStr(), form: null, hop: { surg: "", other: "" } };
+
+  function startDate() { return S.start || monday(todayStr()); }
+  function weekNo(dateStr) {
+    const a = parse(monday(startDate())), b = parse(monday(dateStr));
+    return Math.max(1, Math.round((b - a) / 604800000) + 1);
+  }
+
+  /* ---------- plan (from the High/Low routine) ---------- */
+  const EX = {
+    pushup: { n: "Press-up", load: "kg", reps: 12, sets: 3, bump: "Hit the top of the range. Put your feet up or slow the lowering to 3 sec." },
+    row: { n: "Towel row", load: "kg", reps: 12, sets: 3, bump: "Hit the top of the range. Lean back further or hold the top for 2 sec." },
+    pike: { n: "Pike press-up", load: "kg", reps: 10, sets: 3, bump: "Hit the top of the range. Raise your feet or slow the lowering." },
+    curl: { n: "Backpack curl to press", load: "kg", reps: 10, sets: 3, bump: "Hit 10. Add a book or bottle to the backpack." },
+    split: { n: "Rear-foot-elevated split squat", load: "kg", reps: 8, sets: 3, per: "per leg", bump: "Comfortable at 8. Add weight to the backpack or slow the lowering to 3 sec." },
+    rdl: { n: "Single-leg Romanian deadlift", load: "kg", reps: 8, sets: 3, per: "per leg", bump: "Comfortable at 8. Add weight to the backpack or slow the lowering to 3 sec." },
+    nordic: { n: "Nordic curl regression", load: "s lowering", reps: 5, sets: 3, bump: "Five clean lowers. Add a second to the lowering time." },
+    calf: { n: "Single-leg calf raise", load: "kg", reps: 20, sets: 3, per: "per leg", bump: "Hit 20. Add weight or work off a step." },
+    juggle: { n: "Juggling best streak", load: null, reps: 0, sets: 1, unit: "touches" }
+  };
+  const EX_ORDER = ["split", "rdl", "nordic", "calf", "pushup", "row", "pike", "curl", "juggle"];
+
+  function runFor(w) {
+    if (w <= 2) return "8 × (run 2 min / walk 2 min)";
+    if (w <= 4) return "6 × (run 3 min / walk 90 sec)";
+    if (w <= 6) return "5 × (run 5 min / walk 90 sec)";
+    if (w <= 8) return "3 × (run 8 min / walk 2 min)";
+    if (w <= 10) return "Run 15 min / walk 3 min / run 10 min";
+    if (w === 11) return "Run 25 min continuous";
+    return "The 5k. Run/walk allowed, just finish.";
+  }
+  function jumpFor(w) {
+    if (w <= 4) return "Squat jump to stick landing: 3 sets × 5. Hold each landing 2 sec, silent feet, knee tracking over toes.";
+    if (w <= 8) return "Single-leg hop to stick: 3 sets × 4 each leg, forward and lateral.";
+    return "Lateral bounds (skater jumps): 3 sets × 5 each side, stick each landing.";
+  }
+  function juggleFor(w) {
+    if (w <= 4) return "Thigh juggles and single-foot lift-and-catch. Target 10 thigh touches in a row, then 5 foot touches per foot.";
+    if (w <= 8) return "Continuous feet-only juggling. Beat your record.";
+    return "Pattern juggling: right, left, thigh, repeat. Finish with juggle, catch on foot, hold 2 sec.";
+  }
+  function ballItems(w) {
+    return [
+      { k: "ball_jug", t: "Juggling · 5 min", d: juggleFor(w), track: "juggle" },
+      { k: "ball_wall", t: "Wall passing · 5 min", d: "2-touch: 60 sec each foot. 1-touch: 60 sec each foot, softer." + (w >= 5 ? " Control with one foot, pass with the other; vary distance 2–5 m." : "") },
+      { k: "ball_close", t: "Close control · 5 min", d: "Toe taps 30 sec, sole rolls 60 sec, figure-8 around two markers 2 min, inside-inside chops 60 sec." }
+    ];
+  }
+
+  function sessionFor(dateStr) {
+    const dow = parse(dateStr).getDay();
+    const w = clamp(weekNo(dateStr), 1, 12);
+    const rw = clamp(w - S.runShift, 1, 12);
+    switch (dow) {
+      case 1: return { type: "HIGH", title: "5v5 football", mins: "Match day", note: "Your hardest day. Check the knee tomorrow morning.", items: [{ k: "football", t: "Played 5v5" }] };
+      case 2: return { type: "LOW", title: "Upper + core + ball", mins: "30 + 15 min", note: "Ball work first, while you're fresh. Strength block: 3 rounds, 60–90 sec between rounds.",
+        items: ballItems(w).concat([
+          { k: "warm", t: "Warm-up · 4 min", d: "Arm circles, band pull-aparts or wall slides, 10 slow scapular push-ups, 20 jumping jacks." },
+          { k: "pushup", t: "Press-up", d: "8–12 reps. Progress: feet elevated, then 3-sec lowering.", track: "pushup" },
+          { k: "row", t: "Towel row", d: "10–12 reps. Towel round a door handle or table edge, lean back, row.", track: "row" },
+          { k: "pike", t: "Pike press-up", d: "6–10 reps. Shoulders.", track: "pike" },
+          { k: "curl", t: "Backpack curl to overhead press", d: "10 reps.", track: "curl" },
+          { k: "sidepl", t: "Side plank", d: "30–40 sec each side." },
+          { k: "deadbug", t: "Dead bug", d: "8 slow reps each side." },
+          { k: "stretch", t: "Finish · 2 min", d: "Doorway chest stretch, thoracic rotations." }
+        ]) };
+      case 3: return { type: "LOW", title: "5k progression run", mins: "25–40 min", note: "Conversational pace. If you can't talk, slow down. If a week feels hard, repeat it.",
+        run: true, runWeek: rw,
+        items: [{ k: "run", t: "Run · stage " + rw + " of 12", d: runFor(rw) }] };
+      case 4: return { type: "HIGH", title: "Lower strength + jumps", mins: "30 min", note: "Your most important session. Start single-leg work with the surgical leg and match reps on the other side. Never do more on the strong leg.",
+        items: [
+          { k: "warm", t: "Warm-up · 5 min", d: "20 bodyweight squats, 10 walking lunges, 10 soft pogo hops, leg swings." },
+          { k: "split", t: "Rear-foot-elevated split squat", d: "3 rounds × 8 each leg, backpack on, back foot on sofa or chair.", track: "split" },
+          { k: "rdl", t: "Single-leg Romanian deadlift", d: "3 rounds × 8 each leg, backpack in the opposite hand.", track: "rdl" },
+          { k: "nordic", t: "Nordic curl regression", d: "3 rounds × 5 slow lowers. Heels anchored under the sofa, push back up with your hands.", track: "nordic", flag: "Non-negotiable" },
+          { k: "calf", t: "Single-leg calf raise", d: "3 rounds × 15–20 each leg, off a step if you have one.", track: "calf" },
+          { k: "jumps", t: "Jump progression · 7 min", d: jumpFor(w) + " Stop while landings still feel crisp." }
+        ] };
+      case 5: return { type: "LOW", title: "Upper + mobility + ball", mins: "25 + 15 min", note: "Ball work first. Easy effort, nothing to failure.",
+        items: ballItems(w).concat([
+          { k: "upper", t: "Upper · 12 min", d: "2 relaxed rounds: press-up variation × 10, towel row × 10, kneeling superman × 8 each side, glute bridge × 12." },
+          { k: "ankle", t: "Ankle wall rocks", d: "× 12 each side. Drive the knee past the toes, especially the surgical side.", flag: "Never skip" },
+          { k: "hips", t: "Hips and hamstrings", d: "Couch stretch 60 sec/side, 90/90 hip rotations × 8/side, hamstring floss 45 sec/side, deep squat hold 2 × 45 sec." }
+        ]) };
+      case 6: return { type: "MODERATE", title: "Speed and strides", mins: "25 min", note: "Short and crisp. Finish energised, not tired.",
+        items: [
+          { k: "warm", t: "Warm-up · 8 min", d: "Easy jog 3 min, A-skips 2 × 15 m, high knees 2 × 15 m, side shuffles 2 × 15 m each way." },
+          { k: "strides", t: "Strides · 12 min", d: "6 strides of 60–80 m, building to about 85% of top speed. Walk back for full recovery." + (w >= 5 ? " Add 2 harder efforts if the knee feels good." : " No all-out sprints for the first 4 weeks.") },
+          { k: "cuts", t: "Optional cuts · 3 min", d: "4 gentle 45° cuts at jogging pace each side." }
+        ] };
+      default: return { type: "OFF", title: "Full rest", mins: "", note: "Nothing to do. Recovery is part of the plan.", items: [] };
+    }
+  }
+
+  /* ---------- day data ---------- */
+  const blankDay = () => ({ done: {}, complete: false, knee: "", note: "", run: null });
+  const pending = {};
+  const getDay = (d) => S.days[d] || blankDay();
+  function mutDay(date, fn) {
+    const cur = S.days[date];
+    const d = cur ? JSON.parse(JSON.stringify(cur)) : blankDay();
+    d.done = d.done || {};
+    fn(d);
+    d.date = date;
+    S.days[date] = d;
+    pending[date] = (pending[date] || 0) + 1;
+    queue("d" + date, () => S.db && S.db.doc("days/" + date).set(S.days[date])).then(() => { pending[date]--; });
+    render();
+  }
+  function dayStatus(date) {
+    const d = S.days[date];
+    if (!d) return "none";
+    if (d.complete) return "full";
+    return Object.keys(d.done || {}).some((k) => d.done[k]) ? "half" : "none";
+  }
+
+  /* ---------- writes ---------- */
+  const queues = {};
+  function setStatus(msg, err) {
+    const el = document.getElementById("status");
+    el.textContent = msg || "";
+    el.className = "status" + (err ? " err" : "");
+  }
+  function queue(key, fn) {
+    queues[key] = (queues[key] || Promise.resolve()).then(fn).catch((e) => {
+      console.error(e && e.stack); setStatus("Could not save that change (" + ((e && e.code) || "error") + "). Try again.", true);
+    });
+    return queues[key];
+  }
+  function saveSettings() {
+    queue("settings", () => S.db && S.db.doc("settings/main").set({ start: S.start || null, runShift: S.runShift || 0 }));
+  }
+
+  /* ---------- lifts ---------- */
+  const liftsFor = (ex) => S.lifts.filter((l) => l.ex === ex);
+  const lastBefore = (ex, date) => S.lifts.find((l) => l.ex === ex && l.date < date);
+  function fmtEntry(ex, l) {
+    const def = EX[ex];
+    if (!def.load && def.unit) return l.reps + " " + def.unit;
+    const load = l.load ? l.load + (def.load === "kg" ? " kg" : " s") + " × " : "";
+    return load + l.reps + (l.sets > 1 ? " × " + l.sets : "");
+  }
+  function addLift(entry) {
+    let ref = null, id = "l" + Date.now();
+    if (S.db) { try { ref = S.db.collection("lifts").doc(); id = ref.id; } catch (e) { ref = null; } }
+    S.lifts.unshift(Object.assign({ id: id }, entry));
+    S.lifts.sort((a, b) => b.ts - a.ts);
+    if (ref) queue("l" + id, () => ref.set(entry));
+  }
+  function delLift(id) {
+    S.lifts = S.lifts.filter((l) => l.id !== id);
+    queue("l" + id, () => S.db && S.db.doc("lifts/" + id).delete());
+  }
+
+  /* ---------- render ---------- */
+  function tabs() {
+    const T = [["today", "Today"], ["week", "Week"], ["progress", "Progress"], ["checks", "Checks"]];
+    return '<nav class="tabs" role="tablist">' + T.map((t) =>
+      '<button role="tab" id="tab-' + t[0] + '" aria-selected="' + (ui.tab === t[0]) + '" data-act="tab" data-v="' + t[0] + '">' + t[1] + "</button>").join("") + "</nav>";
+  }
+
+  function renderHeader() {
+    const w = weekNo(todayStr());
+    document.getElementById("weeklabel").innerHTML = w > 12 ? "<b>Week " + w + "</b> · past plan" : "Week <b>" + w + "</b> of 12";
+    document.getElementById("strip").innerHTML = Array.from({ length: 12 }, (_, i) => '<i class="' + (i + 1 < w ? "past" : i + 1 === w ? "now" : "") + '"></i>').join("");
+  }
+
+  function viewToday() {
+    const date = ui.date, isToday = date === todayStr();
+    const ses = sessionFor(date), day = getDay(date);
+    const total = ses.items.length;
+    const doneN = ses.items.filter((i) => day.done[i.k]).length;
+    const pct = total ? Math.round((doneN / total) * 100) : 0;
+    let h = '<div class="datenav"><button class="iconbtn" data-act="prev" aria-label="Previous day">‹</button><div class="mid"><h2>' + esc(longDate(date)) + '</h2><div class="small muted">' +
+      (isToday ? "Today" : '<button class="btn small ghost" data-act="today">Back to today</button>') + " · Week " + weekNo(date) +
+      '</div></div><button class="iconbtn" data-act="next" aria-label="Next day">›</button></div>';
+
+    if (!S.start && S.ready) {
+      h += '<div class="banner"><b>Set your start date.</b> Week 1 begins the Monday of ' + esc(shortDate(monday(todayStr()))) + ' unless you change it. The jump, ball and run stages follow the week number.' +
+        '<div class="row"><button class="btn primary small" data-act="confirmstart">Start on ' + esc(shortDate(monday(todayStr()))) + '</button><button class="btn small" data-act="tab" data-v="checks">Pick another date</button></div></div>';
+    }
+
+    const prev = S.days[addDays(date, -1)];
+    const prevPlanned = sessionFor(addDays(date, -1)).items.length > 0;
+    if (day.knee === "sore" || day.knee === "swollen") {
+      h += '<div class="banner ' + (day.knee === "swollen" ? "bad" : "warn") + '"><b>24-hour rule.</b> Yesterday\'s session was too much for the knee. Drop one set or one intensity step next time' + (day.knee === "swollen" ? ", and keep today easy." : ".") + "</div>";
+    }
+
+    h += '<div class="card"><div class="sess-head"><div class="line"><span class="tag ' + ses.type + '">' + ses.type + "</span><h2>" + esc(ses.title) + "</h2></div>" +
+      '<div class="small muted">' + esc(ses.mins) + (total ? ' · <span class="num">' + doneN + "/" + total + "</span> done" : "") + "</div>" +
+      (total ? '<div class="bar"><i style="width:' + pct + '%"></i></div>' : "") +
+      '<div class="sessnote">' + esc(ses.note) + "</div></div>";
+
+    if (ses.items.length) {
+      h += '<div class="items">' + ses.items.map((it) => itemHtml(it, date, day)).join("") + "</div>";
+    }
+    if (ses.run) h += runHtml(ses, day);
+
+    h += '<div class="btn-row"><button class="btn ' + (day.complete ? "" : "primary") + '" data-act="complete" aria-pressed="' + !!day.complete + '">' +
+      (day.complete ? "Session done ✓ (tap to undo)" : ses.type === "OFF" ? "Mark rest day" : "Mark session done") + "</button></div></div>";
+
+    h += '<div class="card"><div class="knee"><span class="lbl">Knee this morning</span>' +
+      [["good", "Fine"], ["sore", "Achy"], ["swollen", "Swollen"]].map((o) =>
+        '<button class="btn small" data-act="knee" data-v="' + o[0] + '" aria-pressed="' + (day.knee === o[0]) + '">' + o[1] + "</button>").join("") + "</div>" +
+      '<div class="rule">If the knee is swollen or achy the morning after a session, that session was too much.</div>' +
+      '<label class="small muted" for="daynote">Notes for ' + esc(longDate(date)) + '</label><textarea id="daynote" data-f="note" placeholder="How it felt, what you changed, anything to remember.">' + esc(day.note) + "</textarea></div>";
+    return h;
+  }
+
+  function itemHtml(it, date, day) {
+    const done = !!day.done[it.k];
+    let h = '<div class="item' + (done ? " done" : "") + '"><button class="chk" data-act="toggle" data-v="' + it.k + '" aria-pressed="' + done + '" aria-label="Mark ' + esc(it.t) + ' done">' + (done ? "✓" : "") + '</button><div class="body"><div class="t">' + esc(it.t) +
+      (it.flag ? ' <span class="flag">' + esc(it.flag) + "</span>" : "") + "</div>" + (it.d ? '<div class="d">' + esc(it.d) + "</div>" : "");
+    if (it.track) {
+      const def = EX[it.track];
+      const today = S.lifts.filter((l) => l.ex === it.track && l.date === date);
+      const last = lastBefore(it.track, date);
+      h += '<div class="lastline">';
+      today.forEach((l) => { h += '<span class="chip num">' + esc(fmtEntry(it.track, l)) + (def.per ? " " + def.per : "") + '<button data-act="dellift" data-v="' + esc(l.id) + '" aria-label="Delete entry">×</button></span>'; });
+      if (!today.length && last) h += '<span class="muted">Last (' + esc(shortDate(last.date)) + '): <b class="num">' + esc(fmtEntry(it.track, last)) + "</b></span>";
+      if (!ui.form || ui.form.ex !== it.track) h += '<button class="btn small" data-act="openlog" data-v="' + it.track + '">' + (today.length ? "Log another" : "Log " + (def.unit ? "streak" : "weight")) + "</button>";
+      h += "</div>";
+      if (!today.length && last && def.bump && last.reps >= def.reps && last.sets >= def.sets) h += '<div class="nudge">Ready to progress: ' + esc(def.bump) + "</div>";
+      if (ui.form && ui.form.ex === it.track) h += formHtml(it.track);
+    }
+    return h + "</div></div>";
+  }
+
+  function formHtml(ex) {
+    const def = EX[ex], f = ui.form;
+    return '<div class="form">' +
+      (def.load ? '<label for="f-load">' + (def.load === "kg" ? "Load (kg)" : "Lowering (s)") + '<input id="f-load" data-f="load" type="number" inputmode="decimal" step="0.5" min="0" value="' + esc(f.load) + '"></label>' : "") +
+      '<label for="f-reps">' + (def.unit ? "Touches" : "Reps" + (def.per ? " / leg" : "")) + '<input id="f-reps" data-f="reps" type="number" inputmode="numeric" min="0" value="' + esc(f.reps) + '"></label>' +
+      (def.unit ? "" : '<label for="f-sets">Sets<input id="f-sets" data-f="sets" type="number" inputmode="numeric" min="1" value="' + esc(f.sets) + '"></label>') +
+      '<label class="wide" for="f-note">Note (optional)<input id="f-note" data-f="fnote" type="text" value="' + esc(f.note) + '" placeholder="feet elevated, 3 sec lowering…"></label>' +
+      '<div class="btn-row wide"><button class="btn primary small" data-act="savelog">Save</button><button class="btn small ghost" data-act="cancellog">Cancel</button></div></div>';
+  }
+
+  function runHtml(ses, day) {
+    const r = day.run || {};
+    const pace = r.km > 0 && r.min > 0 ? (() => { const p = r.min / r.km, m = Math.floor(p), s = Math.round((p - m) * 60); return m + ":" + pad(s === 60 ? 0 : s) + " /km"; })() : "";
+    return '<div class="form" style="margin-top:0"><label for="r-km">Distance (km)<input id="r-km" data-f="runkm" type="number" inputmode="decimal" step="0.1" min="0" value="' + esc(r.km == null ? "" : r.km) + '"></label>' +
+      '<label for="r-min">Time (min)<input id="r-min" data-f="runmin" type="number" inputmode="decimal" step="0.5" min="0" value="' + esc(r.min == null ? "" : r.min) + '"></label>' +
+      '<div class="num" style="align-self:center">' + esc(pace) + '</div>' +
+      '<div class="btn-row wide"><span class="small muted" style="align-self:center">Run stage ' + ses.runWeek + " of 12</span>" +
+      '<button class="btn small" data-act="runback">Move back a stage</button><button class="btn small" data-act="runrepeat">Repeat this stage next week</button></div></div>';
+  }
+
+  function viewWeek() {
+    const today = todayStr(), mon = monday(ui.date === today ? today : today);
+    let h = '<div class="card"><h3>This week</h3><div class="days7">';
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(mon, i), ses = sessionFor(d), st = dayStatus(d), k = (S.days[d] || {}).knee;
+      h += '<button class="dcell' + (d === today ? " today" : "") + '" data-act="go" data-v="' + d + '" aria-label="' + esc(longDate(d)) + '"><span class="dn">' + DOW[parse(d).getDay()] + '</span><span class="dot ' + (ses.type === "OFF" ? "rest " : "") + st + '"></span><span class="dd">' +
+        (ses.type === "OFF" ? "Rest" : ses.type.slice(0, 1) + ses.type.slice(1, 3).toLowerCase()) + "</span>" + (k === "sore" || k === "swollen" ? '<span class="kdot ' + k + '"></span>' : "") + "</button>";
+    }
+    h += "</div></div>";
+
+    const nWeeks = Math.max(12, weekNo(today));
+    h += '<div class="card"><h3>' + nWeeks + ' weeks</h3><div class="small muted">Filled = session done. Half = some items ticked. Dot in the corner = achy or swollen knee. Sunday is rest.</div><div class="heat">';
+    h += '<div></div>' + ["M", "T", "W", "T", "F", "S", "S"].map((x) => '<div class="hh">' + x + "</div>").join("") + '<div class="hh">Done</div>';
+    const m0 = monday(startDate());
+    for (let w = 1; w <= nWeeks; w++) {
+      const wm = addDays(m0, 7 * (w - 1));
+      let done = 0;
+      h += '<div class="wl' + (wm === mon ? " now" : "") + '">W' + w + "</div>";
+      for (let i = 0; i < 7; i++) {
+        const d = addDays(wm, i), st = dayStatus(d), k = (S.days[d] || {}).knee, off = i === 6;
+        if (i < 6 && st === "full") done++;
+        h += '<button class="hc ' + st + (off ? " off" : "") + (d > today ? " future" : "") + (k === "sore" || k === "swollen" ? " " + k : "") + '" data-act="go" data-v="' + d + '" aria-label="' + esc(longDate(d)) + ": " + st + '"></button>';
+      }
+      h += '<div class="pct num">' + (wm > today ? "" : done + "/6") + "</div>";
+    }
+    h += "</div></div>";
+    return h;
+  }
+
+  function chartSvg(points, unit) {
+    const W = 320, H = 120, L = 34, R = 12, T = 10, B = 22;
+    let lo = Math.min.apply(null, points.map((p) => p.v)), hi = Math.max.apply(null, points.map((p) => p.v));
+    if (lo === hi) { lo = Math.max(0, lo - 1); hi = hi + 1; } else { const pd = (hi - lo) * 0.1; lo = Math.max(0, lo - pd); hi = hi + pd; }
+    const t0 = parse(points[0].date).getTime(), t1 = parse(points[points.length - 1].date).getTime();
+    const X = (p) => points.length === 1 || t1 === t0 ? (L + W - R) / 2 : L + ((parse(p.date).getTime() - t0) / (t1 - t0)) * (W - L - R);
+    const Y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+    const r = (n) => Math.round(n * 10) / 10;
+    let s = '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + esc(unit) + ' over time">';
+    [0, 0.5, 1].forEach((f) => { const y = T + f * (H - T - B), v = hi - f * (hi - lo); s += '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + r(y) + '" y2="' + r(y) + '"/><text x="' + (L - 4) + '" y="' + r(y + 3) + '" text-anchor="end">' + r(v) + "</text>"; });
+    s += '<polyline class="ln" points="' + points.map((p) => r(X(p)) + "," + r(Y(p.v))).join(" ") + '"/>';
+    points.forEach((p, i) => { s += '<circle class="' + (i === points.length - 1 ? "end" : "pt") + '" cx="' + r(X(p)) + '" cy="' + r(Y(p.v)) + '" r="' + (i === points.length - 1 ? 4 : 3) + '"/>'; });
+    s += '<text x="' + L + '" y="' + (H - 6) + '" text-anchor="start">' + esc(shortDate(points[0].date)) + "</text>";
+    if (points.length > 1) s += '<text x="' + (W - R) + '" y="' + (H - 6) + '" text-anchor="end">' + esc(shortDate(points[points.length - 1].date)) + "</text>";
+    return s + "</svg>";
+  }
+
+  function viewProgress() {
+    const used = EX_ORDER.filter((ex) => liftsFor(ex).length);
+    let h = "";
+    if (!used.length) {
+      h += '<div class="card flat"><h3>No lifts logged yet</h3><div class="empty">Open Today on a strength day, tap "Log weight" on an exercise, and its progress shows up here. Ball work logs your juggling streak the same way.</div></div>';
+    }
+    EX_ORDER.forEach((ex) => {
+      const def = EX[ex], list = liftsFor(ex);
+      if (!list.length) return;
+      const useLoad = def.load && list.some((l) => l.load > 0);
+      const byDate = {};
+      list.forEach((l) => { const v = useLoad ? l.load || 0 : l.reps; if (byDate[l.date] == null || v > byDate[l.date]) byDate[l.date] = v; });
+      const points = Object.keys(byDate).sort().map((d) => ({ date: d, v: byDate[d] }));
+      const unit = useLoad ? (def.load === "kg" ? "kg" : "sec lowering") : def.unit || "reps";
+      const best = Math.max.apply(null, points.map((p) => p.v)), latest = points[points.length - 1].v;
+      const first = points[0].v;
+      const delta = latest - first;
+      h += '<div class="card excard"><div class="exhead"><h3>' + esc(def.n) + '</h3><span class="small muted">' + list.length + " logged" + (def.per ? " · " + def.per : "") + "</span></div>" +
+        '<div class="stats"><div class="stat"><div class="v num">' + latest + '</div><div class="k">Latest ' + esc(unit) + '</div></div><div class="stat"><div class="v num">' + best + '</div><div class="k">Best</div></div>' +
+        (points.length > 1 ? '<div class="stat"><div class="v num">' + (delta > 0 ? "+" : "") + Math.round(delta * 10) / 10 + '</div><div class="k">Since first</div></div>' : "") + "</div>" +
+        (points.length > 1 ? chartSvg(points, unit) : '<div class="empty small">Log a second session to see the trend.</div>') +
+        '<details><summary>All entries</summary><div class="hist">' + list.slice(0, 40).map((l) =>
+          '<div class="r"><span class="num">' + esc(shortDate(l.date)) + '</span><span class="num">' + esc(fmtEntry(ex, l)) + "</span>" + (l.note ? '<span class="muted" style="min-width:0;overflow-wrap:anywhere">' + esc(l.note) + "</span>" : "") +
+          '<button class="btn small ghost" data-act="dellift" data-v="' + esc(l.id) + '" aria-label="Delete entry" style="margin-left:auto">×</button></div>').join("") + "</div></details></div>";
+    });
+    return h;
+  }
+
+  function viewChecks() {
+    const dates = Object.keys(S.checks).sort().reverse();
+    const lastD = dates[0];
+    const due = addDays(lastD || startDate(), 28);
+    const dueIn = Math.round((parse(due) - parse(todayStr())) / 86400000);
+    let h = '<div class="card"><h3>Hop test</h3><div class="rule">Every 4 weeks: 3 single-leg hops for distance on each leg. If the surgical leg reaches under about 90% of the other side, keep loading Thursday\'s single-leg work before progressing jumps.</div>' +
+      '<div class="small ' + (dueIn <= 0 ? "" : "muted") + '"><b>' + (dueIn <= 0 ? "Due now." : "Next test due " + esc(shortDate(due)) + " (in " + dueIn + " days).") + "</b></div>" +
+      '<div class="form" style="margin-top:0"><label for="hop-s">Surgical leg (cm)<input id="hop-s" data-f="hopsurg" type="number" inputmode="decimal" min="0" value="' + esc(ui.hop.surg) + '"></label>' +
+      '<label for="hop-o">Other leg (cm)<input id="hop-o" data-f="hopother" type="number" inputmode="decimal" min="0" value="' + esc(ui.hop.other) + '"></label>' +
+      '<div class="btn-row"><button class="btn primary small" data-act="savehop">Save today\'s test</button></div></div>';
+    if (dates.length) {
+      h += dates.map((d) => {
+        const c = S.checks[d], pct = c.other > 0 ? Math.round((c.surg / c.other) * 100) : 0;
+        return '<div class="hoprow"><span class="num">' + esc(shortDate(d)) + '</span><span class="num muted">' + c.surg + " vs " + c.other + ' cm</span><span class="pill ' + (pct >= 90 ? "good" : "low") + ' num">' + pct + "%</span>" +
+          '<span class="small">' + (pct >= 90 ? "Above 90%" : "Below 90%: keep loading") + '</span><button class="btn small ghost" data-act="delcheck" data-v="' + d + '" aria-label="Delete test">×</button></div>';
+      }).join("");
+    } else h += '<div class="empty">No tests yet.</div>';
+    h += "</div>";
+    h += '<div class="card"><h3>Programme start</h3><div class="rule">Week 1 is the week (Monday to Sunday) that contains this date. Changing it moves every stage: run, jumps and ball work.</div>' +
+      '<label class="small muted" for="startdate">Start date</label><input id="startdate" data-f="start" type="date" value="' + esc(S.start || "") + '">' +
+      (S.runShift ? '<div class="small muted">Run stage is shifted by ' + S.runShift + " week" + (Math.abs(S.runShift) === 1 ? "" : "s") + ' from the calendar.</div>' : "") + "</div>";
+    if (S.user) h += '<div class="card"><h3>Account</h3><div class="small muted">Signed in as ' + esc(S.user.email || "") + '</div><div class="btn-row"><button class="btn small" data-act="signout">Sign out</button></div></div>';
+    return h;
+  }
+
+  function render() {
+    const ae = document.activeElement;
+    const keep = ae && $app.contains(ae) && ae.id ? { id: ae.id, s: ae.selectionStart, e: ae.selectionEnd } : null;
+    renderHeader();
+    if (S.login) { $app.innerHTML = loginHtml(); return; }
+    let body = "";
+    if (!S.ready && !S.failed && S.db) body = '<div class="empty">Loading your log…' + (S.slow ? " Your saved data can't be reached yet. Edits will wait." : "") + "</div>";
+    else body = ui.tab === "today" ? viewToday() : ui.tab === "week" ? viewWeek() : ui.tab === "progress" ? viewProgress() : viewChecks();
+    $app.innerHTML = tabs() + '<div style="display:flex;flex-direction:column;gap:16px;margin-top:16px" role="tabpanel">' + body + "</div>";
+    if (keep) {
+      const el = document.getElementById(keep.id);
+      if (el) { el.focus(); try { if (keep.s != null) el.setSelectionRange(keep.s, keep.e); } catch (e) { /* number inputs */ } }
+    }
+  }
+
+  /* ---------- events ---------- */
+  $app.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-act]");
+    if (!b) return;
+    const a = b.dataset.act, v = b.dataset.v;
+    if (a === "tab") { ui.tab = v; ui.form = null; }
+    else if (a === "go") { ui.date = v; ui.tab = "today"; ui.form = null; }
+    else if (a === "prev") { ui.date = addDays(ui.date, -1); ui.form = null; }
+    else if (a === "next") { ui.date = addDays(ui.date, 1); ui.form = null; }
+    else if (a === "today") { ui.date = todayStr(); ui.form = null; }
+    else if (a === "toggle") { mutDay(ui.date, (d) => { d.done[v] = !d.done[v]; }); return; }
+    else if (a === "complete") { mutDay(ui.date, (d) => { d.complete = !d.complete; }); return; }
+    else if (a === "knee") { mutDay(ui.date, (d) => { d.knee = d.knee === v ? "" : v; }); return; }
+    else if (a === "openlog") {
+      const last = lastBefore(v, "9999") || null, def = EX[v];
+      ui.form = { ex: v, load: last && last.load ? last.load : "", reps: last ? last.reps : def.reps || "", sets: last ? last.sets : def.sets, note: "" };
+    }
+    else if (a === "cancellog") ui.form = null;
+    else if (a === "savelog") {
+      const f = ui.form, def = EX[f.ex], reps = num(f.reps);
+      if (reps == null || reps <= 0) { setStatus("Enter the reps first.", true); return; }
+      setStatus("");
+      addLift({ date: ui.date, ex: f.ex, load: def.load ? num(f.load) || 0 : null, reps: reps, sets: def.unit ? 1 : num(f.sets) || 1, note: (f.note || "").trim(), ts: Date.now() });
+      const item = sessionFor(ui.date).items.find((i) => i.track === f.ex);
+      ui.form = null;
+      if (item) { mutDay(ui.date, (d) => { d.done[item.k] = true; }); return; }
+    }
+    else if (a === "dellift") delLift(v);
+    else if (a === "confirmstart") { S.start = monday(todayStr()); saveSettings(); }
+    else if (a === "runrepeat") { S.runShift = clamp(S.runShift + 1, -12, 12); saveSettings(); }
+    else if (a === "runback") { S.runShift = clamp(S.runShift - 1, -12, 12); saveSettings(); }
+    else if (a === "savehop") {
+      const s = num(ui.hop.surg), o = num(ui.hop.other);
+      if (!s || !o) { setStatus("Enter both distances in cm.", true); return; }
+      setStatus("");
+      const d = todayStr();
+      S.checks[d] = { date: d, surg: s, other: o };
+      queue("c" + d, () => S.db && S.db.doc("checks/" + d).set(S.checks[d]));
+      ui.hop = { surg: "", other: "" };
+    }
+    else if (a === "signin") {
+      const el = document.getElementById("login-email"), email = el ? el.value.trim() : "";
+      if (!email || !sb) return;
+      ui.loginMsg = "Sending…"; ui.loginErr = false;
+      sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: location.origin + location.pathname } }).then((r) => {
+        ui.loginErr = !!r.error; ui.loginMsg = r.error ? r.error.message : "Check your email for the sign-in link."; render();
+      });
+    }
+    else if (a === "signout") { if (sb) sb.auth.signOut().then(() => location.reload()); return; }
+    else if (a === "delcheck") { delete S.checks[v]; queue("c" + v, () => S.db && S.db.doc("checks/" + v).delete()); }
+    render();
+  });
+
+  $app.addEventListener("input", (e) => {
+    const f = e.target.dataset && e.target.dataset.f;
+    if (!f) return;
+    if (ui.form && (f === "load" || f === "reps" || f === "sets")) ui.form[f] = e.target.value;
+    else if (f === "fnote" && ui.form) ui.form.note = e.target.value;
+    else if (f === "hopsurg") ui.hop.surg = e.target.value;
+    else if (f === "hopother") ui.hop.other = e.target.value;
+  });
+
+  $app.addEventListener("change", (e) => {
+    const f = e.target.dataset && e.target.dataset.f, val = e.target.value;
+    if (f === "note") mutDay(ui.date, (d) => { d.note = val; });
+    else if (f === "runkm" || f === "runmin") mutDay(ui.date, (d) => { d.run = d.run || {}; d.run[f === "runkm" ? "km" : "min"] = num(val); });
+    else if (f === "start") { S.start = val ? monday(val) : null; saveSettings(); render(); }
+  });
+
+  /* ---------- data ---------- */
+  function boot(db) {
+    S.db = db;
+    if (!db) { S.ready = true; setStatus("Not connected to storage. Changes will not be saved after you close this page."); render(); return; }
+    const timer = setTimeout(() => { if (!S.ready) { S.slow = true; render(); } }, 10000);
+    const fail = (e) => { S.failed = true; S.ready = true; clearTimeout(timer); setStatus("Storage error (" + ((e && e.code) || "unknown") + "). Reopen the page to retry.", true); render(); };
+    let got = { days: false, settings: false };
+    const ok = () => { if (got.days && got.settings) { S.ready = true; clearTimeout(timer); } };
+    db.collection("days").onSnapshot((snap) => {
+      const m = {}; snap.docs.forEach((d) => { m[d.id] = d.data(); });
+      Object.keys(pending).forEach((k) => { if (pending[k] > 0 && S.days[k]) m[k] = S.days[k]; });
+      S.days = m; got.days = true; ok(); render();
+    }, fail);
+    db.doc("settings/main").onSnapshot((snap) => {
+      const d = snap.exists ? snap.data() : {};
+      S.start = d.start || null; S.runShift = d.runShift || 0; got.settings = true; ok(); render();
+    }, fail);
+    db.collection("lifts").orderBy("ts", "desc").limit(1000).onSnapshot((snap) => {
+      S.lifts = snap.docs.map((d) => Object.assign({ id: d.id }, d.data())); render();
+    }, fail);
+    db.collection("checks").onSnapshot((snap) => {
+      const m = {}; snap.docs.forEach((d) => { m[d.id] = d.data(); });
+      S.checks = m; render();
+    }, fail);
+  }
+
+  /* ---------- Supabase adapter: same small db interface the page was written against ---------- */
+  function makeDb(client, uid) {
+    const TB = { days: "user_id,date", lifts: "id", checks: "user_id,date", settings: "user_id" };
+    const toRow = (t, id, d) => {
+      if (t === "days") return { user_id: uid, date: id, done: d.done || {}, complete: !!d.complete, knee: d.knee || "", note: d.note || "", run: d.run || null };
+      if (t === "lifts") return { user_id: uid, id: id, date: d.date, ex: d.ex, load: d.load, reps: d.reps, sets: d.sets, note: d.note || "", ts: d.ts };
+      if (t === "checks") return { user_id: uid, date: id, surg: d.surg, other: d.other };
+      return { user_id: uid, start: d.start || null, run_shift: d.runShift || 0 };
+    };
+    const fromRow = (t, r) => {
+      if (t === "days") return [r.date, { date: r.date, done: r.done || {}, complete: !!r.complete, knee: r.knee || "", note: r.note || "", run: r.run }];
+      if (t === "lifts") return [r.id, { date: r.date, ex: r.ex, load: r.load == null ? null : Number(r.load), reps: Number(r.reps), sets: Number(r.sets), note: r.note || "", ts: Number(r.ts) }];
+      if (t === "checks") return [r.date, { date: r.date, surg: Number(r.surg), other: Number(r.other) }];
+      return ["main", { start: r.start, runShift: r.run_shift }];
+    };
+    const wrapErr = (e) => ({ code: (e && (e.code || e.status)) || "error", message: (e && e.message) || "error" });
+    const subs = { days: [], lifts: [], checks: [], settings: [] };
+    async function fetchT(t) {
+      const r = await client.from(t).select("*");
+      if (r.error) throw wrapErr(r.error);
+      return r.data || [];
+    }
+    async function refresh(t) {
+      if (!subs[t].length) return;
+      try { const rows = await fetchT(t); subs[t].slice().forEach((x) => x.deliver(rows)); }
+      catch (e) { subs[t].slice().forEach((x) => x.err && x.err(e)); }
+    }
+    function sub(t, deliver, err) {
+      const x = { deliver: deliver, err: err };
+      subs[t].push(x);
+      fetchT(t).then(deliver).catch((e) => err && err(e));
+      return () => { subs[t] = subs[t].filter((y) => y !== x); };
+    }
+    const docsOf = (t, rows) => {
+      const docs = rows.map((r) => { const p = fromRow(t, r); return { id: p[0], exists: true, data: () => p[1] }; });
+      if (t === "lifts") docs.sort((a, b) => b.data().ts - a.data().ts);
+      return docs;
+    };
+    function dref(t, id) {
+      return {
+        id: id,
+        async set(d) {
+          const r = await client.from(t).upsert(toRow(t, id, d), { onConflict: TB[t] });
+          if (r.error) throw wrapErr(r.error);
+          refresh(t);
+        },
+        async delete() {
+          let q = client.from(t).delete().eq("user_id", uid);
+          if (t !== "settings") q = q.eq(t === "lifts" ? "id" : "date", id);
+          const r = await q;
+          if (r.error) throw wrapErr(r.error);
+          refresh(t);
+        },
+        onSnapshot(cb, err) {
+          return sub(t, (rows) => {
+            const hit = docsOf(t, rows).find((d) => d.id === id);
+            cb(hit || { id: id, exists: false, data: () => undefined });
+          }, err);
+        }
+      };
+    }
+    function cref(t) {
+      const q = {
+        orderBy: () => q, limit: () => q,
+        onSnapshot: (cb, err) => sub(t, (rows) => cb({ docs: docsOf(t, rows) }), err),
+        doc: (id) => dref(t, id || (window.crypto && crypto.randomUUID ? crypto.randomUUID() : "l" + Date.now()))
+      };
+      return q;
+    }
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) Object.keys(subs).forEach(refresh); });
+    return {
+      collection: (t) => cref(t),
+      doc: (path) => { const p = path.split("/"); return dref(p[0], p[1]); }
+    };
+  }
+
+  /* ---------- sign-in ---------- */
+  function loginHtml() {
+    return '<div class="card"><h3>Sign in</h3><div class="rule">Your log is stored in your Supabase project and locked to your account. Enter your email and open the link we send you.</div>' +
+      '<label class="small muted" for="login-email">Email</label><input id="login-email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com">' +
+      '<div class="btn-row"><button class="btn primary" data-act="signin">Email me a sign-in link</button></div>' +
+      '<div class="small ' + (ui.loginErr ? "" : "muted") + '" role="status">' + esc(ui.loginMsg || "") + "</div></div>";
+  }
+
+  const cfg = window.SUPABASE_CONFIG || {};
+  render();
+  if (!cfg.url || !cfg.anonKey || /YOUR_/.test(cfg.url + cfg.anonKey) || !window.supabase) {
+    S.ready = true;
+    setStatus("Supabase is not set up yet. Fill in config.js with your project URL and anon key.", true);
+    render();
+  } else {
+    sb = window.supabase.createClient(cfg.url, cfg.anonKey);
+    let started = false;
+    const onSession = (session) => {
+      if (session && session.user) {
+        S.login = false; S.user = session.user;
+        if (!started) { started = true; boot(makeDb(sb, session.user.id)); }
+        render();
+      } else { S.login = true; S.user = null; started = false; render(); }
+    };
+    sb.auth.getSession().then((r) => onSession(r.data && r.data.session));
+    sb.auth.onAuthStateChange((_e, session) => onSession(session));
+  }
+})();
+</script>
+</body>
+</html>
