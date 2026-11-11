@@ -148,6 +148,12 @@ nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: 
 .chk[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); }
 .item .body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .item .t { font-weight: 600; }
+.tbtn { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 2px; width: 100%; text-align: left; background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: inherit; cursor: pointer; }
+.tbtn .tap { margin-left: auto; font-size: 13px; font-weight: 600; color: var(--accent); }
+.item .d { cursor: default; }
+.stepper { display: flex; gap: 4px; }
+.stepper input { text-align: center; padding-left: 4px; padding-right: 4px; }
+.stp { flex: none; width: 34px; min-height: 40px; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; font-size: 20px; line-height: 1; padding: 0; }
 .item.done .t { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
 .item .d { font-size: 14px; color: var(--muted); }
 .kind { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 0 6px; border: 1px solid currentColor; border-radius: 4px; vertical-align: 2px; margin-left: 6px; }
@@ -180,7 +186,7 @@ nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: 
 .btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
 .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
-.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; align-items: end; background: var(--bg); border-radius: 8px; padding: 10px; margin-top: 4px; }
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)); gap: 8px; align-items: end; background: var(--bg); border-radius: 8px; padding: 10px; margin-top: 4px; }
 .form label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; min-width: 0; }
 .form .wide { grid-column: 1 / -1; }
 input, textarea, select {
@@ -356,7 +362,7 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
     const w = clamp(weekNo(dateStr), 1, 12);
     const rw = clamp(w - S.runShift, 1, 12);
     switch (dow) {
-      case 1: return { type: "HIGH", title: "5v5 football", mins: "Match day", note: "Your hardest day. Check the knee tomorrow morning.", items: [{ k: "football", t: "Played 5v5" }] };
+      case 1: return { type: "HIGH", title: "5v5 football", mins: "Match day", note: "Your hardest day.", items: [{ k: "football", t: "Played 5v5" }] };
       case 2: return { type: "LOW", title: "Upper + core + ball", mins: "30 + 15 min", note: "Ball work first, while you're fresh. Strength block: 3 rounds, 60–90 sec between rounds.",
         items: ballItems(w).concat([
           { k: "warm", t: "Warm-up · 4 min", d: "Arm circles, band pull-aparts or wall slides, 10 slow scapular push-ups, 20 jumping jacks." },
@@ -465,14 +471,11 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
     if (!ss.length) return { load: null, reps: null, range: true, sets: def.sets, tone: "first", why: "First time: start light and aim for " + (def.lo === def.hi ? def.lo : def.lo + "–" + def.hi) + " reps." };
     const last = ss[0], prev = ss[1], prev2 = ss[2];
     const base = last.load || 0;
-    const knee = (S.days[addDays(last.date, 1)] || {}).knee;
     const met = last.reps >= def.hi && last.sets >= def.sets;
     const same = (a, b) => a && b && (a.load || 0) === (b.load || 0) && a.reps <= b.reps;
     const stalled2 = !met && same(last, prev), stalled3 = stalled2 && same(prev, prev2);
     const T = (o) => Object.assign({ sets: def.sets }, o);
     const unit = def.load === "kg" ? " kg" : " s";
-    if (knee === "swollen") return T({ load: base, reps: Math.max(def.lo, last.reps), sets: Math.max(1, def.sets - 1), tone: "down", why: "The knee was swollen the morning after last time. Same load, one set fewer." });
-    if (knee === "sore") return T({ load: base, reps: last.reps, sets: Math.min(def.sets, last.sets), tone: "hold", why: "The knee was achy the morning after last time. Repeat it before progressing." });
     if (met) {
       if (def.bw && !base) return T({ load: 0, reps: def.lo, tone: "up", why: "You hit " + def.hi + " × " + def.sets + ". Make it harder (" + def.harder + "), then restart at " + def.lo + " reps." });
       const nl = def.load !== "kg" && !base ? null : base + def.step;
@@ -535,12 +538,6 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
         '<div class="row"><button class="btn primary small" data-act="confirmstart">Start on ' + esc(shortDate(monday(todayStr()))) + '</button><button class="btn small" data-act="tab" data-v="checks">Pick another date</button></div></div>';
     }
 
-    const prev = S.days[addDays(date, -1)];
-    const prevPlanned = sessionFor(addDays(date, -1)).items.length > 0;
-    if (day.knee === "sore" || day.knee === "swollen") {
-      h += '<div class="banner ' + (day.knee === "swollen" ? "bad" : "warn") + '"><b>24-hour rule.</b> Yesterday\'s session was too much for the knee. Drop one set or one intensity step next time' + (day.knee === "swollen" ? ", and keep today easy." : ".") + "</div>";
-    }
-
     h += '<div class="card"><div class="sess-head"><div class="line"><span class="tag ' + ses.type + '">' + ses.type + "</span><h2>" + esc(ses.title) + "</h2></div>" +
       '<div class="small muted">' + esc(ses.mins) + (total ? ' · <span class="num">' + doneN + "/" + total + "</span> done" : "") + "</div>" +
       (total ? '<div class="bar"><i style="width:' + pct + '%"></i></div>' : "") +
@@ -555,11 +552,7 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
     h += '<div class="btn-row"><button class="btn ' + (day.complete ? "" : "primary") + '" data-act="complete" aria-pressed="' + !!day.complete + '">' +
       (day.complete ? "Session done ✓ (tap to undo)" : ses.type === "OFF" ? "Mark rest day" : "Mark session done") + "</button></div></div>";
 
-    h += '<div class="card"><div class="knee"><span class="lbl">Knee this morning</span>' +
-      [["good", "Fine"], ["sore", "Achy"], ["swollen", "Swollen"]].map((o) =>
-        '<button class="btn small" data-act="knee" data-v="' + o[0] + '" aria-pressed="' + (day.knee === o[0]) + '">' + o[1] + "</button>").join("") + "</div>" +
-      '<div class="rule">If the knee is swollen or achy the morning after a session, that session was too much.</div>' +
-      '<label class="small muted" for="daynote">Notes for ' + esc(longDate(date)) + '</label><textarea id="daynote" data-f="note" placeholder="How it felt, what you changed, anything to remember.">' + esc(day.note) + "</textarea></div>";
+    h += '<div class="card"><label class="small muted" for="daynote">Notes for ' + esc(longDate(date)) + '</label><textarea id="daynote" data-f="note" placeholder="How it felt, what you changed, anything to remember.">' + esc(day.note) + "</textarea></div>";
     return h;
   }
 
@@ -572,9 +565,10 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
 
   function itemHtml(it, date, day) {
     const done = !!day.done[it.k];
-    let h = '<div class="item' + (done ? " done" : "") + '"><button class="chk" data-act="toggle" data-v="' + it.k + '" aria-pressed="' + done + '" aria-label="Mark ' + esc(it.t) + ' done">' + (done ? "✓" : "") + '</button><div class="body"><div class="t">' + esc(it.t) +
-      (it.kind ? ' <span class="kind ' + it.kind + '">' + KIND_LABEL[it.kind] + "</span>" : "") +
-      (it.flag ? ' <span class="flag">' + esc(it.flag) + "</span>" : "") + "</div>" + (it.d ? '<div class="d">' + esc(it.d) + "</div>" : "");
+    let h = '<div class="item' + (done ? " done" : "") + '"><button class="chk" data-act="tap" data-v="' + it.k + '" aria-pressed="' + done + '" aria-label="' + (it.track ? "Log " : "Mark ") + esc(it.t) + (it.track ? "" : " done") + '">' + (done ? "✓" : "") + '</button><div class="body"><button class="t tbtn" data-act="tap" data-v="' + it.k + '">' + esc(it.t) +
+      (it.kind ? '<span class="kind ' + it.kind + '">' + KIND_LABEL[it.kind] + "</span>" : "") +
+      (it.flag ? '<span class="flag" style="margin-left:6px">' + esc(it.flag) + "</span>" : "") +
+      (it.track && !(ui.form && ui.form.k === it.k) ? '<span class="tap">' + (done ? "Edit ›" : "Log ›") + "</span>" : "") + "</button>" + (it.d ? '<div class="d">' + esc(it.d) + "</div>" : "");
     if (it.track) {
       const def = EX[it.track];
       const today = S.lifts.filter((l) => l.ex === it.track && l.date === date);
@@ -590,21 +584,27 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
           (r === 1 ? '<span class="res">Beat target</span>' : r === 0 ? '<span class="res">Target met</span>' : r === -1 ? '<span class="res low">Below target</span>' : "");
       });
       if (!today.length && last) h += '<span class="muted">Last (' + esc(shortDate(last.date)) + '): <b class="num">' + esc(fmtEntry(it.track, last)) + "</b></span>";
-      if (!ui.form || ui.form.ex !== it.track) h += '<button class="btn small" data-act="openlog" data-v="' + it.track + '">' + (today.length ? "Log another" : "Log " + (def.unit ? "streak" : "weight")) + "</button>";
       h += "</div>";
-      if (ui.form && ui.form.ex === it.track) h += formHtml(it.track);
+      if (ui.form && ui.form.k === it.k) h += formHtml(it.track, done);
     }
     return h + "</div></div>";
   }
 
-  function formHtml(ex) {
+  function stepper(f, id, val, attrs, aria) {
+    return '<div class="stepper"><button type="button" class="stp" data-act="step" data-v="' + f + ':-1" aria-label="Less ' + aria + '">−</button>' +
+      '<input id="' + id + '" data-f="' + f + '" type="number" inputmode="decimal" ' + attrs + ' value="' + esc(val) + '">' +
+      '<button type="button" class="stp" data-act="step" data-v="' + f + ':1" aria-label="More ' + aria + '">+</button></div>';
+  }
+  function formHtml(ex, done) {
     const def = EX[ex], f = ui.form;
     return '<div class="form">' +
-      (def.load ? '<label for="f-load">' + (def.load === "kg" ? "Load (kg)" : "Lowering (s)") + '<input id="f-load" data-f="load" type="number" inputmode="decimal" step="0.5" min="0" value="' + esc(f.load) + '"></label>' : "") +
-      '<label for="f-reps">' + (def.unit ? "Touches" : "Reps" + (def.per ? " / leg" : "")) + '<input id="f-reps" data-f="reps" type="number" inputmode="numeric" min="0" value="' + esc(f.reps) + '"></label>' +
-      (def.unit ? "" : '<label for="f-sets">Sets<input id="f-sets" data-f="sets" type="number" inputmode="numeric" min="1" value="' + esc(f.sets) + '"></label>') +
+      (def.load ? '<label for="f-load">' + (def.load === "kg" ? "Load (kg)" : "Lowering (s)") + stepper("load", "f-load", f.load, 'step="0.5" min="0"', "load") + "</label>" : "") +
+      '<label for="f-reps">' + (def.unit ? "Touches" : "Reps" + (def.per ? " / leg" : "")) + stepper("reps", "f-reps", f.reps, 'step="1" min="0"', "reps") + "</label>" +
+      (def.unit ? "" : '<label for="f-sets">Sets' + stepper("sets", "f-sets", f.sets, 'step="1" min="1"', "sets") + "</label>") +
       '<label class="wide" for="f-note">Note (optional)<input id="f-note" data-f="fnote" type="text" value="' + esc(f.note) + '" placeholder="feet elevated, 3 sec lowering…"></label>' +
-      '<div class="btn-row wide"><button class="btn primary small" data-act="savelog">Save</button><button class="btn small ghost" data-act="cancellog">Cancel</button></div></div>';
+      '<div class="btn-row wide"><button class="btn primary" data-act="savelog">' + (def.unit ? "Done · save streak" : "Done · save") + "</button>" +
+      (done ? '<button class="btn small" data-act="untick">Mark not done</button>' : '<button class="btn small" data-act="ticknolog">Done, no weight</button>') +
+      '<button class="btn small ghost" data-act="cancellog">Cancel</button></div></div>';
   }
 
   function runHtml(ses, day) {
@@ -621,9 +621,9 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
     const today = todayStr(), mon = monday(ui.date === today ? today : today);
     let h = '<div class="card"><h3>This week</h3><div class="days7">';
     for (let i = 0; i < 7; i++) {
-      const d = addDays(mon, i), ses = sessionFor(d), st = dayStatus(d), k = (S.days[d] || {}).knee;
+      const d = addDays(mon, i), ses = sessionFor(d), st = dayStatus(d);
       h += '<button class="dcell' + (d === today ? " today" : "") + '" data-act="go" data-v="' + d + '" aria-label="' + esc(longDate(d)) + '"><span class="dn">' + DOW[parse(d).getDay()] + '</span><span class="dot ' + (ses.type === "OFF" ? "rest " : "") + st + '"></span><span class="dd">' +
-        (ses.type === "OFF" ? "Rest" : ses.type.slice(0, 1) + ses.type.slice(1, 3).toLowerCase()) + "</span>" + (k === "sore" || k === "swollen" ? '<span class="kdot ' + k + '"></span>' : "") + "</button>";
+        (ses.type === "OFF" ? "Rest" : ses.type.slice(0, 1) + ses.type.slice(1, 3).toLowerCase()) + "</span></button>";
     }
     h += "</div></div>";
 
@@ -641,7 +641,7 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
     h += "</table></div></div>";
 
     const nWeeks = Math.max(12, weekNo(today));
-    h += '<div class="card"><h3>' + nWeeks + ' weeks</h3><div class="small muted">Filled = session done. Half = some items ticked. Dot in the corner = achy or swollen knee. Sunday is rest.</div><div class="heat">';
+    h += '<div class="card"><h3>' + nWeeks + ' weeks</h3><div class="small muted">Filled = session done. Half = some items ticked. Sunday is rest.</div><div class="heat">';
     h += '<div></div>' + ["M", "T", "W", "T", "F", "S", "S"].map((x) => '<div class="hh">' + x + "</div>").join("") + '<div class="hh">Done</div>';
     const m0 = monday(startDate());
     for (let w = 1; w <= nWeeks; w++) {
@@ -649,9 +649,9 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
       let done = 0;
       h += '<div class="wl' + (wm === mon ? " now" : "") + '">W' + w + "</div>";
       for (let i = 0; i < 7; i++) {
-        const d = addDays(wm, i), st = dayStatus(d), k = (S.days[d] || {}).knee, off = i === 6;
+        const d = addDays(wm, i), st = dayStatus(d), off = i === 6;
         if (i < 6 && st === "full") done++;
-        h += '<button class="hc ' + st + (off ? " off" : "") + (d > today ? " future" : "") + (k === "sore" || k === "swollen" ? " " + k : "") + '" data-act="go" data-v="' + d + '" aria-label="' + esc(longDate(d)) + ": " + st + '"></button>';
+        h += '<button class="hc ' + st + (off ? " off" : "") + (d > today ? " future" : "") + '" data-act="go" data-v="' + d + '" aria-label="' + esc(longDate(d)) + ": " + st + '"></button>';
       }
       h += '<div class="pct num">' + (wm > today ? "" : done + "/6") + "</div>";
     }
@@ -758,23 +758,34 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
     else if (a === "today") { ui.date = todayStr(); ui.form = null; }
     else if (a === "toggle") { mutDay(ui.date, (d) => { d.done[v] = !d.done[v]; }); return; }
     else if (a === "complete") { mutDay(ui.date, (d) => { d.complete = !d.complete; }); return; }
-    else if (a === "knee") { mutDay(ui.date, (d) => { d.knee = d.knee === v ? "" : v; }); return; }
-    else if (a === "openlog") {
-      const last = lastBefore(v, "9999") || null, def = EX[v], t = nextTarget(v, ui.date);
-      ui.form = {
-        ex: v,
-        load: t && t.load != null ? (t.load || "") : last && last.load ? last.load : "",
-        reps: t && t.reps ? t.reps : def.lo || "",
-        sets: t && t.sets ? t.sets : def.sets, note: ""
-      };
+    else if (a === "tap") {
+      const it = sessionFor(ui.date).items.find((i) => i.k === v);
+      if (!it) return;
+      if (!it.track) { mutDay(ui.date, (d) => { d.done[v] = !d.done[v]; }); return; }
+      if (ui.form && ui.form.k === v) ui.form = null;
+      else {
+        const last = lastBefore(it.track, "9999") || null, def = EX[it.track], t = nextTarget(it.track, ui.date);
+        ui.form = {
+          ex: it.track, k: v,
+          load: t && t.load != null ? (t.load || "") : last && last.load ? last.load : "",
+          reps: t && t.reps ? t.reps : def.lo || "",
+          sets: t && t.sets ? t.sets : def.sets, note: ""
+        };
+      }
     }
+    else if (a === "step") {
+      const p = v.split(":"), f = ui.form;
+      if (f) { const min = p[0] === "sets" ? 1 : 0; f[p[0]] = Math.round(Math.max(min, (num(f[p[0]]) || 0) + Number(p[1])) * 10) / 10; }
+    }
+    else if (a === "ticknolog") { const k = ui.form && ui.form.k; ui.form = null; if (k) { mutDay(ui.date, (d) => { d.done[k] = true; }); return; } }
+    else if (a === "untick") { const k = ui.form && ui.form.k; ui.form = null; if (k) { mutDay(ui.date, (d) => { d.done[k] = false; }); return; } }
     else if (a === "cancellog") ui.form = null;
     else if (a === "savelog") {
       const f = ui.form, def = EX[f.ex], reps = num(f.reps);
       if (reps == null || reps <= 0) { setStatus("Enter the reps first.", true); return; }
       setStatus("");
       addLift({ date: ui.date, ex: f.ex, load: def.load ? num(f.load) || 0 : null, reps: reps, sets: def.unit ? 1 : num(f.sets) || 1, note: (f.note || "").trim(), ts: Date.now() });
-      const item = sessionFor(ui.date).items.find((i) => i.track === f.ex);
+      const item = sessionFor(ui.date).items.find((i) => i.k === f.k);
       ui.form = null;
       if (item) { mutDay(ui.date, (d) => { d.done[item.k] = true; }); return; }
     }
