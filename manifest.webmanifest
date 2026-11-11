@@ -1,7 +1,7 @@
 {
-  "name": "Comeback Training Log",
-  "short_name": "Comeback",
-  "description": "Daily check-in and lift tracker for the 12-week football comeback routine.",
+  "name": "Training Log",
+  "short_name": "Training Log",
+  "description": "Daily check-in and lift tracker for the 12-week football routine.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
