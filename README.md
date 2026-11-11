@@ -20,3 +20,12 @@ Personal football training hub: drills, weekly plans, fitness, and progress logs
 4. Host the site and open it. Your numbers save straight to Supabase.
 
 Anyone who has the site address and the anon key can read and write the tables, so don't share the address. If that ever matters, add Supabase Auth and tighten the policies.
+
+## How targets work
+Each exercise has a rep range and a set count. After you log a session, the next one shows a target:
+- Hit the top of the range on every set: add load (2 kg, 1 kg for curls, 1 s for Nordics) and restart at the bottom of the range. Bodyweight moves (press-up, row, pike) suggest a harder variation instead.
+- Otherwise: same load, one more rep.
+- No gain for three sessions: take about 10% off and rebuild.
+- Knee achy or swollen the morning after: repeat the session, or drop a set.
+
+Items are labelled Loading, Mobility, Skill or Conditioning; the Week tab counts each type per week.

@@ -29,6 +29,10 @@
   --mod: #9a6a05;
   --low: #286a8c;
   --off: #76827b;
+  --k-load: #5547c9;
+  --k-mobility: #0d7f86;
+  --k-skill: #9a6a05;
+  --k-cond: #b0457a;
   --bad: #b3261e;
   --warn: #9a6a05;
   --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
@@ -48,6 +52,10 @@
     --mod: #e3b24c;
     --low: #72b6d8;
     --off: #8a958f;
+    --k-load: #a79cff;
+    --k-mobility: #5fd0d6;
+    --k-skill: #e3b24c;
+    --k-cond: #f08fbd;
     --bad: #ff7b72;
     --warn: #e3b24c;
     color-scheme: dark;
@@ -66,6 +74,10 @@
   --mod: #e3b24c;
   --low: #72b6d8;
   --off: #8a958f;
+  --k-load: #a79cff;
+  --k-mobility: #5fd0d6;
+  --k-skill: #e3b24c;
+  --k-cond: #f08fbd;
   --bad: #ff7b72;
   --warn: #e3b24c;
   color-scheme: dark;
@@ -138,6 +150,23 @@ nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: 
 .item .t { font-weight: 600; }
 .item.done .t { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
 .item .d { font-size: 14px; color: var(--muted); }
+.kind { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 0 6px; border: 1px solid currentColor; border-radius: 4px; vertical-align: 2px; margin-left: 6px; }
+.kind.load { color: var(--k-load); } .kind.mobility { color: var(--k-mobility); } .kind.skill { color: var(--k-skill); } .kind.cond { color: var(--k-cond); }
+.kinds { display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: 13px; }
+.kinds .kind { margin-left: 0; margin-right: 4px; }
+.target { font-size: 14px; display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
+.target b { font-weight: 700; }
+.target .num { font-weight: 700; }
+.target.up .num { color: var(--accent); } .target.down .num, .target.hold .num { color: var(--warn); }
+.why { font-size: 13px; color: var(--muted); flex-basis: 100%; }
+.res { font-size: 13px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.res.low { background: transparent; border: 1px solid var(--warn); color: var(--warn); }
+.fchips { display: flex; gap: 6px; flex-wrap: wrap; }
+.kt { width: 100%; border-collapse: collapse; font-size: 14px; }
+.kt th, .kt td { text-align: center; padding: 6px 4px; border-top: 1px solid var(--line); }
+.kt th { font-weight: 600; font-size: 12px; color: var(--muted); border-top: 0; }
+.kt td:first-child, .kt th:first-child { text-align: left; font-family: var(--font-display); font-weight: 600; letter-spacing: .05em; }
+.chart .pt.up { fill: var(--accent); }
 .flag { font-size: 12px; font-weight: 600; color: var(--bad); letter-spacing: .04em; text-transform: uppercase; }
 .lastline { font-size: 14px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
 .chip { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-soft); border-radius: 999px; padding: 2px 4px 2px 10px; font-size: 14px; font-weight: 500; }
@@ -258,7 +287,7 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
   /* ---------- state ---------- */
   let sb = null;
   const S = { days: {}, lifts: [], checks: {}, start: null, runShift: 0, db: null, ready: false, slow: false, failed: false };
-  const ui = { tab: "today", date: todayStr(), form: null, hop: { surg: "", other: "" } };
+  const ui = { pfilter: "all", tab: "today", date: todayStr(), form: null, hop: { surg: "", other: "" } };
 
   function startDate() { return S.start || monday(todayStr()); }
   function weekNo(dateStr) {
@@ -267,16 +296,26 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
   }
 
   /* ---------- plan (from the High/Low routine) ---------- */
+  // lo/hi = rep range, sets = target sets, step = load added when the top of the range is hit on every set.
+  // bw = bodyweight-based: harder = a harder variation rather than weight.
   const EX = {
-    pushup: { n: "Press-up", load: "kg", reps: 12, sets: 3, bump: "Hit the top of the range. Put your feet up or slow the lowering to 3 sec." },
-    row: { n: "Towel row", load: "kg", reps: 12, sets: 3, bump: "Hit the top of the range. Lean back further or hold the top for 2 sec." },
-    pike: { n: "Pike press-up", load: "kg", reps: 10, sets: 3, bump: "Hit the top of the range. Raise your feet or slow the lowering." },
-    curl: { n: "Backpack curl to press", load: "kg", reps: 10, sets: 3, bump: "Hit 10. Add a book or bottle to the backpack." },
-    split: { n: "Rear-foot-elevated split squat", load: "kg", reps: 8, sets: 3, per: "per leg", bump: "Comfortable at 8. Add weight to the backpack or slow the lowering to 3 sec." },
-    rdl: { n: "Single-leg Romanian deadlift", load: "kg", reps: 8, sets: 3, per: "per leg", bump: "Comfortable at 8. Add weight to the backpack or slow the lowering to 3 sec." },
-    nordic: { n: "Nordic curl regression", load: "s lowering", reps: 5, sets: 3, bump: "Five clean lowers. Add a second to the lowering time." },
-    calf: { n: "Single-leg calf raise", load: "kg", reps: 20, sets: 3, per: "per leg", bump: "Hit 20. Add weight or work off a step." },
-    juggle: { n: "Juggling best streak", load: null, reps: 0, sets: 1, unit: "touches" }
+    pushup: { n: "Press-up", kind: "load", load: "kg", lo: 8, hi: 12, sets: 3, step: 2, bw: true, harder: "feet elevated, or a 3-sec lowering" },
+    row: { n: "Towel row", kind: "load", load: "kg", lo: 10, hi: 12, sets: 3, step: 2, bw: true, harder: "lean back further, or hold the top for 2 sec" },
+    pike: { n: "Pike press-up", kind: "load", load: "kg", lo: 6, hi: 10, sets: 3, step: 2, bw: true, harder: "raise your feet, or slow the lowering" },
+    curl: { n: "Backpack curl to press", kind: "load", load: "kg", lo: 8, hi: 10, sets: 3, step: 1 },
+    split: { n: "Rear-foot-elevated split squat", kind: "load", load: "kg", lo: 6, hi: 8, sets: 3, step: 2, per: "per leg" },
+    rdl: { n: "Single-leg Romanian deadlift", kind: "load", load: "kg", lo: 6, hi: 8, sets: 3, step: 2, per: "per leg" },
+    nordic: { n: "Nordic curl regression", kind: "load", load: "s lowering", lo: 5, hi: 5, sets: 3, step: 1 },
+    calf: { n: "Single-leg calf raise", kind: "load", load: "kg", lo: 15, hi: 20, sets: 3, step: 2, per: "per leg" },
+    juggle: { n: "Juggling best streak", kind: "skill", load: null, reps: 0, sets: 1, unit: "touches" }
+  };
+  const KIND_LABEL = { load: "Loading", mobility: "Mobility", skill: "Skill", cond: "Conditioning" };
+  const KIND_ORDER = ["load", "mobility", "skill", "cond"];
+  // category of every plan item, by item key (anything not listed counts as loading)
+  const KIND = {
+    football: "cond", run: "cond", jumps: "cond", strides: "cond", cuts: "cond",
+    ball_jug: "skill", ball_wall: "skill", ball_close: "skill",
+    warm: "mobility", stretch: "mobility", ankle: "mobility", hips: "mobility"
   };
   const EX_ORDER = ["split", "rdl", "nordic", "calf", "pushup", "row", "pike", "curl", "juggle"];
 
@@ -308,6 +347,11 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
   }
 
   function sessionFor(dateStr) {
+    const ses = sessionRaw(dateStr);
+    ses.items.forEach((i) => { i.kind = KIND[i.k] || "load"; });
+    return ses;
+  }
+  function sessionRaw(dateStr) {
     const dow = parse(dateStr).getDay();
     const w = clamp(weekNo(dateStr), 1, 12);
     const rw = clamp(w - S.runShift, 1, 12);
@@ -400,6 +444,57 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
     const load = l.load ? l.load + (def.load === "kg" ? " kg" : " s") + " × " : "";
     return load + l.reps + (l.sets > 1 ? " × " + l.sets : "");
   }
+  // Best entry per day for an exercise, newest day first, only days before `before`.
+  function sessionsOf(ex, before) {
+    const byDate = {};
+    S.lifts.forEach((l) => {
+      if (l.ex !== ex || (before && l.date >= before)) return;
+      const c = byDate[l.date];
+      if (!c || (l.load || 0) > (c.load || 0) || ((l.load || 0) === (c.load || 0) && l.reps > c.reps)) byDate[l.date] = l;
+    });
+    return Object.keys(byDate).sort().reverse().map((d) => byDate[d]);
+  }
+  // Double progression: add reps up to the top of the range on every set, then add load and restart at the bottom.
+  function nextTarget(ex, date) {
+    const def = EX[ex], ss = sessionsOf(ex, date);
+    if (def.unit) {
+      const best = ss.reduce((m, l) => Math.max(m, l.reps), 0);
+      return best ? { reps: best + 1, sets: 1, load: null, tone: "reps", why: "Your best before today is " + best + ". Beat it by one." }
+        : { reps: null, sets: 1, load: null, tone: "first", why: "Log a streak to set a target." };
+    }
+    if (!ss.length) return { load: null, reps: null, range: true, sets: def.sets, tone: "first", why: "First time: start light and aim for " + (def.lo === def.hi ? def.lo : def.lo + "–" + def.hi) + " reps." };
+    const last = ss[0], prev = ss[1], prev2 = ss[2];
+    const base = last.load || 0;
+    const knee = (S.days[addDays(last.date, 1)] || {}).knee;
+    const met = last.reps >= def.hi && last.sets >= def.sets;
+    const same = (a, b) => a && b && (a.load || 0) === (b.load || 0) && a.reps <= b.reps;
+    const stalled2 = !met && same(last, prev), stalled3 = stalled2 && same(prev, prev2);
+    const T = (o) => Object.assign({ sets: def.sets }, o);
+    const unit = def.load === "kg" ? " kg" : " s";
+    if (knee === "swollen") return T({ load: base, reps: Math.max(def.lo, last.reps), sets: Math.max(1, def.sets - 1), tone: "down", why: "The knee was swollen the morning after last time. Same load, one set fewer." });
+    if (knee === "sore") return T({ load: base, reps: last.reps, sets: Math.min(def.sets, last.sets), tone: "hold", why: "The knee was achy the morning after last time. Repeat it before progressing." });
+    if (met) {
+      if (def.bw && !base) return T({ load: 0, reps: def.lo, tone: "up", why: "You hit " + def.hi + " × " + def.sets + ". Make it harder (" + def.harder + "), then restart at " + def.lo + " reps." });
+      const nl = def.load !== "kg" && !base ? null : base + def.step;
+      return T({ load: nl, reps: def.lo, tone: "up", why: "You hit " + last.reps + " × " + last.sets + ". " + (nl == null ? "Time your lowering and log it." : "Add " + def.step + unit + " and restart at " + def.lo + " reps.") });
+    }
+    if (stalled3 && base > 0) return T({ load: Math.max(0, Math.round(base * 0.9 * 2) / 2), reps: def.lo, tone: "down", why: "No gain in three sessions. Take about 10% off and rebuild." });
+    if (last.reps >= def.hi) return T({ load: base, reps: def.hi, tone: "reps", why: "Complete all " + def.sets + " sets at this load before adding weight." });
+    return T({ load: base, reps: Math.min(def.hi, last.reps + 1), tone: "reps", why: stalled2 ? "No gain last time. Stay at this load and aim for one more rep." : "Same load, one more rep than last time." });
+  }
+  function fmtTarget(ex, t) {
+    const def = EX[ex];
+    if (def.unit) return t.reps ? t.reps + " " + def.unit : "";
+    if (t.range) return (def.lo === def.hi ? def.lo : def.lo + "–" + def.hi) + " × " + t.sets + (def.per ? " " + def.per : "");
+    return (t.load ? t.load + (def.load === "kg" ? " kg" : " s") + " × " : "") + t.reps + " × " + t.sets + (def.per ? " " + def.per : "");
+  }
+  // How today's logged entry compares with the target: 1 beat, 0 met, -1 below.
+  function vsTarget(ex, t, l) {
+    if (t.range || t.reps == null) return null;
+    if (t.load != null && (l.load || 0) !== (t.load || 0)) return (l.load || 0) > (t.load || 0) ? 1 : -1;
+    const d = l.reps * l.sets - t.reps * t.sets;
+    return d > 0 ? 1 : d < 0 ? -1 : 0;
+  }
   function addLift(entry) {
     let ref = null, id = "l" + Date.now();
     if (S.db) { try { ref = S.db.collection("lifts").doc(); id = ref.id; } catch (e) { ref = null; } }
@@ -449,6 +544,7 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
     h += '<div class="card"><div class="sess-head"><div class="line"><span class="tag ' + ses.type + '">' + ses.type + "</span><h2>" + esc(ses.title) + "</h2></div>" +
       '<div class="small muted">' + esc(ses.mins) + (total ? ' · <span class="num">' + doneN + "/" + total + "</span> done" : "") + "</div>" +
       (total ? '<div class="bar"><i style="width:' + pct + '%"></i></div>' : "") +
+      kindSummary(ses.items, day) +
       '<div class="sessnote">' + esc(ses.note) + "</div></div>";
 
     if (ses.items.length) {
@@ -467,20 +563,35 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
     return h;
   }
 
+  function kindSummary(items, day) {
+    const c = {};
+    items.forEach((i) => { const k = c[i.kind] = c[i.kind] || { t: 0, d: 0 }; k.t++; if (day.done[i.k]) k.d++; });
+    const ks = KIND_ORDER.filter((k) => c[k]);
+    return ks.length ? '<div class="kinds">' + ks.map((k) => '<span><span class="kind ' + k + '">' + KIND_LABEL[k] + '</span><span class="num">' + c[k].d + "/" + c[k].t + "</span></span>").join("") + "</div>" : "";
+  }
+
   function itemHtml(it, date, day) {
     const done = !!day.done[it.k];
     let h = '<div class="item' + (done ? " done" : "") + '"><button class="chk" data-act="toggle" data-v="' + it.k + '" aria-pressed="' + done + '" aria-label="Mark ' + esc(it.t) + ' done">' + (done ? "✓" : "") + '</button><div class="body"><div class="t">' + esc(it.t) +
+      (it.kind ? ' <span class="kind ' + it.kind + '">' + KIND_LABEL[it.kind] + "</span>" : "") +
       (it.flag ? ' <span class="flag">' + esc(it.flag) + "</span>" : "") + "</div>" + (it.d ? '<div class="d">' + esc(it.d) + "</div>" : "");
     if (it.track) {
       const def = EX[it.track];
       const today = S.lifts.filter((l) => l.ex === it.track && l.date === date);
       const last = lastBefore(it.track, date);
+      const tgt = nextTarget(it.track, date);
+      if (tgt && (tgt.reps != null || tgt.range)) {
+        h += '<div class="target ' + tgt.tone + '"><b>Target</b><span class="num">' + esc(fmtTarget(it.track, tgt)) + '</span><span class="why">' + esc(tgt.why) + "</span></div>";
+      }
       h += '<div class="lastline">';
-      today.forEach((l) => { h += '<span class="chip num">' + esc(fmtEntry(it.track, l)) + (def.per ? " " + def.per : "") + '<button data-act="dellift" data-v="' + esc(l.id) + '" aria-label="Delete entry">×</button></span>'; });
+      today.forEach((l) => {
+        const r = tgt ? vsTarget(it.track, tgt, l) : null;
+        h += '<span class="chip num">' + esc(fmtEntry(it.track, l)) + (def.per ? " " + def.per : "") + '<button data-act="dellift" data-v="' + esc(l.id) + '" aria-label="Delete entry">×</button></span>' +
+          (r === 1 ? '<span class="res">Beat target</span>' : r === 0 ? '<span class="res">Target met</span>' : r === -1 ? '<span class="res low">Below target</span>' : "");
+      });
       if (!today.length && last) h += '<span class="muted">Last (' + esc(shortDate(last.date)) + '): <b class="num">' + esc(fmtEntry(it.track, last)) + "</b></span>";
       if (!ui.form || ui.form.ex !== it.track) h += '<button class="btn small" data-act="openlog" data-v="' + it.track + '">' + (today.length ? "Log another" : "Log " + (def.unit ? "streak" : "weight")) + "</button>";
       h += "</div>";
-      if (!today.length && last && def.bump && last.reps >= def.reps && last.sets >= def.sets) h += '<div class="nudge">Ready to progress: ' + esc(def.bump) + "</div>";
       if (ui.form && ui.form.ex === it.track) h += formHtml(it.track);
     }
     return h + "</div></div>";
@@ -516,6 +627,19 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
     }
     h += "</div></div>";
 
+    const nW = weekNo(today), m0k = monday(startDate());
+    h += '<div class="card"><h3>By type</h3><div class="small muted">Items done out of items planned, per week.</div><div style="overflow-x:auto"><table class="kt"><tr><th>Week</th>' +
+      KIND_ORDER.map((k) => '<th><span class="kind ' + k + '" style="margin:0">' + KIND_LABEL[k] + "</span></th>").join("") + "</tr>";
+    for (let w = Math.max(1, nW - 3); w <= nW; w++) {
+      const wm = addDays(m0k, 7 * (w - 1)), c = {};
+      for (let i = 0; i < 7; i++) {
+        const d = addDays(wm, i), day = S.days[d] || { done: {} };
+        sessionFor(d).items.forEach((it) => { const k = c[it.kind] = c[it.kind] || { t: 0, d: 0 }; k.t++; if (day.done && day.done[it.k]) k.d++; });
+      }
+      h += "<tr><td>W" + w + "</td>" + KIND_ORDER.map((k) => '<td class="num">' + (c[k] ? c[k].d + "/" + c[k].t : "–") + "</td>").join("") + "</tr>";
+    }
+    h += "</table></div></div>";
+
     const nWeeks = Math.max(12, weekNo(today));
     h += '<div class="card"><h3>' + nWeeks + ' weeks</h3><div class="small muted">Filled = session done. Half = some items ticked. Dot in the corner = achy or swollen knee. Sunday is rest.</div><div class="heat">';
     h += '<div></div>' + ["M", "T", "W", "T", "F", "S", "S"].map((x) => '<div class="hh">' + x + "</div>").join("") + '<div class="hh">Done</div>';
@@ -546,7 +670,7 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
     let s = '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + esc(unit) + ' over time">';
     [0, 0.5, 1].forEach((f) => { const y = T + f * (H - T - B), v = hi - f * (hi - lo); s += '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + r(y) + '" y2="' + r(y) + '"/><text x="' + (L - 4) + '" y="' + r(y + 3) + '" text-anchor="end">' + r(v) + "</text>"; });
     s += '<polyline class="ln" points="' + points.map((p) => r(X(p)) + "," + r(Y(p.v))).join(" ") + '"/>';
-    points.forEach((p, i) => { s += '<circle class="' + (i === points.length - 1 ? "end" : "pt") + '" cx="' + r(X(p)) + '" cy="' + r(Y(p.v)) + '" r="' + (i === points.length - 1 ? 4 : 3) + '"/>'; });
+    points.forEach((p, i) => { s += '<circle class="' + (i === points.length - 1 ? "end" : "pt" + (p.up ? " up" : "")) + '" cx="' + r(X(p)) + '" cy="' + r(Y(p.v)) + '" r="' + (i === points.length - 1 ? 4 : 3) + '"/>'; });
     s += '<text x="' + L + '" y="' + (H - 6) + '" text-anchor="start">' + esc(shortDate(points[0].date)) + "</text>";
     if (points.length > 1) s += '<text x="' + (W - R) + '" y="' + (H - 6) + '" text-anchor="end">' + esc(shortDate(points[points.length - 1].date)) + "</text>";
     return s + "</svg>";
@@ -554,24 +678,27 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
 
   function viewProgress() {
     const used = EX_ORDER.filter((ex) => liftsFor(ex).length);
-    let h = "";
+    let h = '<div class="fchips">' + [["all", "All"], ["load", "Loading"], ["skill", "Skill"]].map((f) =>
+      '<button class="btn small" data-act="pfilter" data-v="' + f[0] + '" aria-pressed="' + (ui.pfilter === f[0]) + '">' + f[1] + "</button>").join("") + "</div>";
     if (!used.length) {
       h += '<div class="card flat"><h3>No lifts logged yet</h3><div class="empty">Open Today on a strength day, tap "Log weight" on an exercise, and its progress shows up here. Ball work logs your juggling streak the same way.</div></div>';
     }
     EX_ORDER.forEach((ex) => {
       const def = EX[ex], list = liftsFor(ex);
-      if (!list.length) return;
+      if (!list.length || (ui.pfilter !== "all" && def.kind !== ui.pfilter)) return;
       const useLoad = def.load && list.some((l) => l.load > 0);
       const byDate = {};
       list.forEach((l) => { const v = useLoad ? l.load || 0 : l.reps; if (byDate[l.date] == null || v > byDate[l.date]) byDate[l.date] = v; });
-      const points = Object.keys(byDate).sort().map((d) => ({ date: d, v: byDate[d] }));
+      const points = Object.keys(byDate).sort().map((d, i, arr) => ({ date: d, v: byDate[d], up: i > 0 && byDate[d] > byDate[arr[i - 1]] }));
       const unit = useLoad ? (def.load === "kg" ? "kg" : "sec lowering") : def.unit || "reps";
       const best = Math.max.apply(null, points.map((p) => p.v)), latest = points[points.length - 1].v;
       const first = points[0].v;
       const delta = latest - first;
-      h += '<div class="card excard"><div class="exhead"><h3>' + esc(def.n) + '</h3><span class="small muted">' + list.length + " logged" + (def.per ? " · " + def.per : "") + "</span></div>" +
+      const nt = nextTarget(ex, "9999-12-31");
+      h += '<div class="card excard"><div class="exhead"><h3>' + esc(def.n) + '<span class="kind ' + def.kind + '">' + KIND_LABEL[def.kind] + '</span></h3><span class="small muted">' + list.length + " logged" + (def.per ? " · " + def.per : "") + "</span></div>" +
         '<div class="stats"><div class="stat"><div class="v num">' + latest + '</div><div class="k">Latest ' + esc(unit) + '</div></div><div class="stat"><div class="v num">' + best + '</div><div class="k">Best</div></div>' +
         (points.length > 1 ? '<div class="stat"><div class="v num">' + (delta > 0 ? "+" : "") + Math.round(delta * 10) / 10 + '</div><div class="k">Since first</div></div>' : "") + "</div>" +
+        (nt && (nt.reps != null || nt.range) ? '<div class="target ' + nt.tone + '"><b>Next target</b><span class="num">' + esc(fmtTarget(ex, nt)) + '</span><span class="why">' + esc(nt.why) + "</span></div>" : "") +
         (points.length > 1 ? chartSvg(points, unit) : '<div class="empty small">Log a second session to see the trend.</div>') +
         '<details><summary>All entries</summary><div class="hist">' + list.slice(0, 40).map((l) =>
           '<div class="r"><span class="num">' + esc(shortDate(l.date)) + '</span><span class="num">' + esc(fmtEntry(ex, l)) + "</span>" + (l.note ? '<span class="muted" style="min-width:0;overflow-wrap:anywhere">' + esc(l.note) + "</span>" : "") +
@@ -624,6 +751,7 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
     if (!b) return;
     const a = b.dataset.act, v = b.dataset.v;
     if (a === "tab") { ui.tab = v; ui.form = null; }
+    else if (a === "pfilter") ui.pfilter = v;
     else if (a === "go") { ui.date = v; ui.tab = "today"; ui.form = null; }
     else if (a === "prev") { ui.date = addDays(ui.date, -1); ui.form = null; }
     else if (a === "next") { ui.date = addDays(ui.date, 1); ui.form = null; }
@@ -632,8 +760,13 @@ details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
     else if (a === "complete") { mutDay(ui.date, (d) => { d.complete = !d.complete; }); return; }
     else if (a === "knee") { mutDay(ui.date, (d) => { d.knee = d.knee === v ? "" : v; }); return; }
     else if (a === "openlog") {
-      const last = lastBefore(v, "9999") || null, def = EX[v];
-      ui.form = { ex: v, load: last && last.load ? last.load : "", reps: last ? last.reps : def.reps || "", sets: last ? last.sets : def.sets, note: "" };
+      const last = lastBefore(v, "9999") || null, def = EX[v], t = nextTarget(v, ui.date);
+      ui.form = {
+        ex: v,
+        load: t && t.load != null ? (t.load || "") : last && last.load ? last.load : "",
+        reps: t && t.reps ? t.reps : def.lo || "",
+        sets: t && t.sets ? t.sets : def.sets, note: ""
+      };
     }
     else if (a === "cancellog") ui.form = null;
     else if (a === "savelog") {
